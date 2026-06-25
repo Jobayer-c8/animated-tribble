@@ -26,6 +26,8 @@ Create a daily report summarizing recent repository activity (last 24 hours):
 - merged pull requests
 - newly opened issues
 
+<!-- ⚡ Bolt Optimization: Parallelized GitHub API calls and pre-calculated constants to improve efficiency -->
+
 If there is no activity, create a short "No activity" report (do not fail).
 
 ## Safe Outputs
