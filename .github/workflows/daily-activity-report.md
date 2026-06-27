@@ -28,6 +28,11 @@ Create a daily report summarizing recent repository activity (last 24 hours):
 
 If there is no activity, create a short "No activity" report (do not fail).
 
+## Implementation Details
+
+- Independent GitHub API calls are parallelized using `Promise.all` to reduce script execution time.
+- The `since` date is pre-calculated to avoid redundant `new Date()` calls in filter loops.
+
 ## Safe Outputs
 
 - `create-issue`: used to create the report issue when there is new content.
