@@ -1,0 +1,3 @@
+## 2025-05-15 - Parallelizing GitHub API calls and hoisting Date creation
+**Learning:** Independent GitHub API calls (like fetching commits, PRs, and issues) can be executed in parallel using `Promise.all` to significantly reduce total workflow execution time, especially when network latency is a factor. Additionally, hoisting `new Date()` calls out of filter loops prevents redundant object creation and potential performance hits during large data processing.
+**Action:** Always look for independent `await` calls that can be parallelized and ensure invariant calculations are outside of loop callbacks.
