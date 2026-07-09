@@ -19,20 +19,23 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const since = new Date(Date.now() - 24*60*60*1000).toISOString();
+            const now = new Date();
+            const since = new Date(now.getTime() - 24*60*60*1000).toISOString();
 
-            // Commits since
-            const commits = await github.rest.repos.listCommits({owner, repo, since, per_page: 100});
+            // Parallelize API calls to reduce total script execution time
+            const [commits, pulls, issuesResp] = await Promise.all([
+              github.rest.repos.listCommits({owner, repo, since, per_page: 100}),
+              github.rest.pulls.list({owner, repo, state: 'closed', per_page: 100}),
+              github.rest.issues.listForRepo({owner, repo, since, state: 'all', per_page: 100})
+            ]);
 
-            // Closed PRs merged since
-            const pulls = await github.rest.pulls.list({owner, repo, state: 'closed', per_page: 100});
-            const mergedPRs = pulls.data.filter(p => p.merged_at && new Date(p.merged_at) >= new Date(since));
+            // Filter for merged PRs using string comparison to avoid redundant Date object creation
+            const mergedPRs = pulls.data.filter(p => p.merged_at && p.merged_at >= since);
 
             // Issues (exclude PRs)
-            const issuesResp = await github.rest.issues.listForRepo({owner, repo, since, state: 'all', per_page: 100});
             const issues = issuesResp.data.filter(i => !i.pull_request);
 
-            const date = new Date().toISOString().slice(0,10);
+            const date = now.toISOString().slice(0,10);
             const title = `Daily activity report — ${date}`;
 
             function listToMd(items, formatter) {
