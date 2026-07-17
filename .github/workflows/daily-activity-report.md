@@ -42,3 +42,5 @@ If there is no activity, create a short "No activity" report (do not fail).
 
 - The workflow runs on a daily schedule and can be manually triggered via `workflow_dispatch`.
 - The agent should run read-only; use the configured `create-issue` safe output for writes.
+- API requests for Commits, Closed PRs, and Issues are parallelized using `Promise.all` to optimize execution performance.
+- Direct ISO date string comparisons are used in PR filtering instead of instantiating `Date` objects inside the filter predicate to improve execution speed.
