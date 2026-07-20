@@ -42,3 +42,6 @@ If there is no activity, create a short "No activity" report (do not fail).
 
 - The workflow runs on a daily schedule and can be manually triggered via `workflow_dispatch`.
 - The agent should run read-only; use the configured `create-issue` safe output for writes.
+- **Performance Optimizations (Manual Sync)**:
+  - Concurrent fetches: Instead of sequentially waiting for `listCommits`, `pulls.list`, and `listForRepo` API calls, they are fetched concurrently with `Promise.all` to minimize task execution duration.
+  - Direct timestamp string comparison: Compares merged PR timestamps with `since` using direct lexicographical ISO 8601 string comparison to eliminate redundant `new Date()` object instantiation.
