@@ -42,3 +42,4 @@ If there is no activity, create a short "No activity" report (do not fail).
 
 - The workflow runs on a daily schedule and can be manually triggered via `workflow_dispatch`.
 - The agent should run read-only; use the configured `create-issue` safe output for writes.
+- Implementation note: Independent API requests are fetched in parallel using `Promise.all` to optimize speed, and the `sinceDate` invariant is pre-calculated outside filter callbacks.
