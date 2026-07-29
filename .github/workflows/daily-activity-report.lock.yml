@@ -19,17 +19,22 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const since = new Date(Date.now() - 24*60*60*1000).toISOString();
+            const sinceDate = new Date(Date.now() - 24*60*60*1000);
+            const since = sinceDate.toISOString();
+            const sinceTime = sinceDate.getTime();
 
-            // Commits since
-            const commits = await github.rest.repos.listCommits({owner, repo, since, per_page: 100});
+            // Fetch commits, closed PRs, and issues in parallel to reduce API latency
+            const [commitsResp, pullsResp, issuesResp] = await Promise.all([
+              github.rest.repos.listCommits({owner, repo, since, per_page: 100}),
+              github.rest.pulls.list({owner, repo, state: 'closed', per_page: 100}),
+              github.rest.issues.listForRepo({owner, repo, since, state: 'all', per_page: 100})
+            ]);
 
-            // Closed PRs merged since
-            const pulls = await github.rest.pulls.list({owner, repo, state: 'closed', per_page: 100});
-            const mergedPRs = pulls.data.filter(p => p.merged_at && new Date(p.merged_at) >= new Date(since));
+            // Filter for closed PRs merged since 24 hours ago
+            // Pre-calculated `sinceTime` is used to avoid parsing/re-instantiating Dates inside the filter loop
+            const mergedPRs = pullsResp.data.filter(p => p.merged_at && new Date(p.merged_at).getTime() >= sinceTime);
 
-            // Issues (exclude PRs)
-            const issuesResp = await github.rest.issues.listForRepo({owner, repo, since, state: 'all', per_page: 100});
+            // Filter out pull requests from issues to get newly opened/updated issues
             const issues = issuesResp.data.filter(i => !i.pull_request);
 
             const date = new Date().toISOString().slice(0,10);
@@ -40,7 +45,7 @@ jobs:
               return items.map(formatter).join('\n');
             }
 
-            const commitsMd = listToMd(commits.data, c => `- ${c.commit.message.split('\n')[0]} ([view](${c.html_url}))`);
+            const commitsMd = listToMd(commitsResp.data, c => `- ${c.commit.message.split('\n')[0]} ([view](${c.html_url}))`);
             const prsMd = listToMd(mergedPRs, p => `- ${p.title} [#${p.number}](${p.html_url}) — @${p.user.login}`);
             const issuesMd = listToMd(issues, i => `- ${i.title} [#${i.number}](${i.html_url}) — @${i.user.login}`);
 
