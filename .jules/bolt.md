@@ -1,0 +1,3 @@
+## 2025-02-15 - Concurrent GitHub API Requests in Workflows
+**Learning:** Sequential await statements on independent GitHub API calls (e.g., listCommits, pulls.list, issues.listForRepo) introduce unnecessary execution latency as each request blocks the next. Grouping them with `Promise.all` allows parallel fetch execution, significantly lowering workflow run times. Additionally, instantiating new Date objects or parsing strings inside `.filter()` loops causes minor but unnecessary overhead on large arrays, which can be mitigated by pre-calculating the numerical timestamp outside the loop.
+**Action:** Always parallelize independent read API queries in action script blocks using `Promise.all` and hoist loop-invariant Date parsings to pre-calculated numerical values.
