@@ -42,3 +42,4 @@ If there is no activity, create a short "No activity" report (do not fail).
 
 - The workflow runs on a daily schedule and can be manually triggered via `workflow_dispatch`.
 - The agent should run read-only; use the configured `create-issue` safe output for writes.
+- Implementation detail: To minimize latency and execution duration, the independent GitHub API calls for fetching commits, pulls, and issues are run in parallel using `Promise.all`.
