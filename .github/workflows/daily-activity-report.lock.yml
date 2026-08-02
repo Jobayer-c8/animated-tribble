@@ -21,15 +21,20 @@ jobs:
             const repo = context.repo.repo;
             const since = new Date(Date.now() - 24*60*60*1000).toISOString();
 
-            // Commits since
-            const commits = await github.rest.repos.listCommits({owner, repo, since, per_page: 100});
+            // Performance optimization: Pre-calculate invariant 'since' Date object outside loops
+            const sinceDate = new Date(since);
 
-            // Closed PRs merged since
-            const pulls = await github.rest.pulls.list({owner, repo, state: 'closed', per_page: 100});
-            const mergedPRs = pulls.data.filter(p => p.merged_at && new Date(p.merged_at) >= new Date(since));
+            // Performance optimization: Run independent API calls in parallel using Promise.all to reduce total network/idle time
+            const [commits, pulls, issuesResp] = await Promise.all([
+              github.rest.repos.listCommits({owner, repo, since, per_page: 100}),
+              github.rest.pulls.list({owner, repo, state: 'closed', per_page: 100}),
+              github.rest.issues.listForRepo({owner, repo, since, state: 'all', per_page: 100})
+            ]);
+
+            // Filter closed PRs merged since (uses the pre-calculated sinceDate reference)
+            const mergedPRs = pulls.data.filter(p => p.merged_at && new Date(p.merged_at) >= sinceDate);
 
             // Issues (exclude PRs)
-            const issuesResp = await github.rest.issues.listForRepo({owner, repo, since, state: 'all', per_page: 100});
             const issues = issuesResp.data.filter(i => !i.pull_request);
 
             const date = new Date().toISOString().slice(0,10);
