@@ -42,3 +42,5 @@ If there is no activity, create a short "No activity" report (do not fail).
 
 - The workflow runs on a daily schedule and can be manually triggered via `workflow_dispatch`.
 - The agent should run read-only; use the configured `create-issue` safe output for writes.
+- Parallel fetching is used to retrieve commits, closed PRs, and issues concurrently to optimize script performance and minimize execution time.
+- Pre-calculating invariant parameters/dates outside loop and filter callbacks minimizes redundant operations.
