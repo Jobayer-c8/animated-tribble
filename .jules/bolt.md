@@ -1,0 +1,3 @@
+## 2025-08-06 - Parallelized GitHub API Calls and Optimized Date Filter in Workflows
+**Learning:** Sequential await calls for independent GitHub REST API requests in workflow actions introduce cumulative network latency. In JavaScript-based actions, wrapping these requests in `Promise.all` executes them in parallel, saving substantial script execution time. Additionally, repeatedly parsing identical reference dates inside filter callbacks (e.g. `new Date(since)`) introduces redundant heap allocations and CPU cycles; pre-calculating the invariant date outside the filter improves runtime efficiency.
+**Action:** Always inspect custom JS actions for sequential network requests and parallelize them where independent. Move immutable date parsing out of hot collection filters.
