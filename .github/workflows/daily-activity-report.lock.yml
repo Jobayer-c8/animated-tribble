@@ -19,17 +19,27 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const since = new Date(Date.now() - 24*60*60*1000).toISOString();
+            const msInDay = 24 * 60 * 60 * 1000;
+            const sinceDate = new Date(Date.now() - msInDay);
+            const since = sinceDate.toISOString();
 
-            // Commits since
-            const commits = await github.rest.repos.listCommits({owner, repo, since, per_page: 100});
+            // Parallelize independent GitHub API calls using Promise.all to reduce total execution time
+            const [commits, pulls, issuesResp] = await Promise.all([
+              github.rest.repos.listCommits({owner, repo, since, per_page: 100}),
+              github.rest.pulls.list({owner, repo, state: 'closed', per_page: 100}),
+              github.rest.issues.listForRepo({owner, repo, since, state: 'all', per_page: 100})
+            ]);
 
-            // Closed PRs merged since
-            const pulls = await github.rest.pulls.list({owner, repo, state: 'closed', per_page: 100});
-            const mergedPRs = pulls.data.filter(p => p.merged_at && new Date(p.merged_at) >= new Date(since));
+            // Pre-calculate invariant date reference timestamp outside filter to minimize redundant operations
+            const sinceTime = sinceDate.getTime();
+
+            // Closed PRs merged since (avoid instantiating Date in loop; compare timestamp directly)
+            const mergedPRs = pulls.data.filter(p => {
+              if (!p.merged_at) return false;
+              return Date.parse(p.merged_at) >= sinceTime;
+            });
 
             // Issues (exclude PRs)
-            const issuesResp = await github.rest.issues.listForRepo({owner, repo, since, state: 'all', per_page: 100});
             const issues = issuesResp.data.filter(i => !i.pull_request);
 
             const date = new Date().toISOString().slice(0,10);
