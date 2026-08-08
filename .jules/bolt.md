@@ -1,0 +1,3 @@
+## 2025-02-17 - Parallelizing Independent API Queries & Pre-calculating Temporal Invariants in GitHub Workflows
+**Learning:** Sequential await calls for independent GitHub REST API requests (e.g., fetching commits, pull requests, and issues concurrently) block and introduce unnecessary network round-trip overhead. Additionally, instantiating new `Date()` objects inside repetitive filter callback loops incurs redundant CPU and memory overhead when checking timestamps against a constant reference date.
+**Action:** Use `Promise.all` to fetch independent API results concurrently. Extract and pre-calculate reference dates (such as `sinceDate`) outside loops and filter callbacks to maximize performance.
