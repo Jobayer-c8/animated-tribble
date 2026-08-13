@@ -20,16 +20,19 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const since = new Date(Date.now() - 24*60*60*1000).toISOString();
+            const sinceDate = new Date(since);
 
-            // Commits since
-            const commits = await github.rest.repos.listCommits({owner, repo, since, per_page: 100});
+            // Parallelize independent GitHub API queries using Promise.all to reduce script execution time
+            const [commits, pulls, issuesResp] = await Promise.all([
+              github.rest.repos.listCommits({owner, repo, since, per_page: 100}),
+              github.rest.pulls.list({owner, repo, state: 'closed', per_page: 100}),
+              github.rest.issues.listForRepo({owner, repo, since, state: 'all', per_page: 100})
+            ]);
 
-            // Closed PRs merged since
-            const pulls = await github.rest.pulls.list({owner, repo, state: 'closed', per_page: 100});
-            const mergedPRs = pulls.data.filter(p => p.merged_at && new Date(p.merged_at) >= new Date(since));
+            // Closed PRs merged since (pre-calculate invariant sinceDate)
+            const mergedPRs = pulls.data.filter(p => p.merged_at && new Date(p.merged_at) >= sinceDate);
 
             // Issues (exclude PRs)
-            const issuesResp = await github.rest.issues.listForRepo({owner, repo, since, state: 'all', per_page: 100});
             const issues = issuesResp.data.filter(i => !i.pull_request);
 
             const date = new Date().toISOString().slice(0,10);
@@ -44,7 +47,8 @@ jobs:
             const prsMd = listToMd(mergedPRs, p => `- ${p.title} [#${p.number}](${p.html_url}) — @${p.user.login}`);
             const issuesMd = listToMd(issues, i => `- ${i.title} [#${i.number}](${i.html_url}) — @${i.user.login}`);
 
-            const body = `### Commits\n\n${commitsMd}\n<details><summary>Show more</summary>\n\n### Merged PRs\n\n${prsMd}\n\n### New Issues\n\n${issuesMd}\n</details>`;
+            // Keep headings outside details, wrap only PR and issue lists inside details
+            const body = `### Commits\n\n${commitsMd}\n\n### Merged PRs\n\n<details>\n<summary>View Merged PRs</summary>\n\n${prsMd}\n</details>\n\n### New Issues\n\n<details>\n<summary>View New Issues</summary>\n\n${issuesMd}\n</details>`;
 
             // Create the issue
             await github.rest.issues.create({owner, repo, title, body});
