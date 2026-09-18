@@ -41,4 +41,5 @@ If there is no activity, create a short "No activity" report (do not fail).
 ## Notes
 
 - The workflow runs on a daily schedule and can be manually triggered via `workflow_dispatch`.
+- Fetching of commits, closed pull requests, and issues is performed concurrently using `Promise.all` to optimize API response times.
 - The agent should run read-only; use the configured `create-issue` safe output for writes.
