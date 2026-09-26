@@ -26,6 +26,8 @@ Create a daily report summarizing recent repository activity (last 24 hours):
 - merged pull requests
 - newly opened issues
 
+Data for commits, merged PRs, and issues should be fetched concurrently using `Promise.all` to minimize API latency.
+
 If there is no activity, create a short "No activity" report (do not fail).
 
 ## Safe Outputs
