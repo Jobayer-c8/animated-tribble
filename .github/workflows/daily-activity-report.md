@@ -41,4 +41,5 @@ If there is no activity, create a short "No activity" report (do not fail).
 ## Notes
 
 - The workflow runs on a daily schedule and can be manually triggered via `workflow_dispatch`.
+- Fetches commits, merged PRs, and issues in parallel to minimize execution time.
 - The agent should run read-only; use the configured `create-issue` safe output for writes.
